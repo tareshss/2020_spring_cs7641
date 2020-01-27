@@ -1,9 +1,7 @@
 import sys
-
 from sklearn.ensemble import AdaBoostClassifier
-
-sys.path.append("../..")
 from pathlib import Path
+sys.path.append("../..")
 import logging
 import numpy as np
 import pandas as pd
@@ -14,9 +12,10 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import accuracy_score, make_scorer
 from sklearn.model_selection import train_test_split, learning_curve
 import matplotlib.pyplot as plt
-# plt.switch_backend('agg')
+plt.switch_backend('agg')
 import time
 from sklearn.preprocessing import StandardScaler
+from textwrap import wrap
 
 
 logger: logging.getLogger = logging.getLogger(__name__)
@@ -30,7 +29,10 @@ if not logger.hasHandlers():
     logger.propagate = False
 
 verbose = False
-credit_card_path = './data/UCI_Credit_Card.csv'
+
+data_directory = Path("data/")
+credit_card_file = 'UCI_Credit_Card.csv'
+pen_digits_file = 'pendigits_csv.csv'
 
 
 def main():
@@ -43,55 +45,62 @@ def main():
     if seed is None:
         seed = np.random.randint(0, (2 ** 31) - 1)
         logger.info("Using seed {}".format(seed))
-    df = pd.read_csv(credit_card_path)
+    df_credit = pd.read_csv(data_directory/credit_card_file)
 
     # code copied from https://www.kaggle.com/kernels/scriptcontent/2094910/download
-    df = df.rename(columns={'default.payment.next.month': 'def_pay',
+    df_credit = df_credit.rename(columns={'default.payment.next.month': 'def_pay',
                             'PAY_0': 'PAY_1'})
 
-    # y = df['def_pay'].copy()
-    features = ['LIMIT_BAL', 'SEX', 'EDUCATION', 'MARRIAGE', 'AGE', 'PAY_1', 'PAY_2',
+    features_credit = ['LIMIT_BAL', 'SEX', 'EDUCATION', 'MARRIAGE', 'AGE', 'PAY_1', 'PAY_2',
                 'PAY_3', 'PAY_4', 'PAY_5', 'PAY_6', 'BILL_AMT1', 'BILL_AMT2',
                 'BILL_AMT3', 'BILL_AMT4', 'BILL_AMT5', 'BILL_AMT6', 'PAY_AMT1',
                 'PAY_AMT2', 'PAY_AMT3', 'PAY_AMT4', 'PAY_AMT5', 'PAY_AMT6']
     x_scaler = StandardScaler()
-    df[features] = x_scaler.fit_transform(df[features])
-    # X = df[features].copy()
-    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=seed)
-    # classifier = DecisionTreeClassifier(max_depth=10, random_state=14)
-    # training the classifier
-    # classifier.fit(X_train, y_train)
-    # do our predictions on the test
-    # predictions = classifier.predict(X_test)
+    df_credit[features_credit] = x_scaler.fit_transform(df_credit[features_credit])
 
-    # logger.info(accuracy_score(y_true=y_test, y_pred=predictions))
-    train_sizes = [100, 500, 2000, 5000, 8000, 10000, 12000, 15000, 18000, 20000, 24000]
+    train_sizes_credit = [100, 500, 2000, 5000, 8000, 10000, 12000, 15000, 18000, 20000, 24000]
+    x_scaler = StandardScaler()
+    df_credit[features_credit] = x_scaler.fit_transform(df_credit[features_credit])
 
+    # load pen digits
+
+    df_pen = pd.read_csv(data_directory/pen_digits_file)
+    features_pen = ['input1', 'input2', 'input3', 'input4', 'input5', 'input6', 'input7', 'input8', 'input9',
+                    'input10', 'input11', 'input12', 'input13', 'input14', 'input15', 'input16']
+
+    df_pen[features_pen] = x_scaler.fit_transform(df_pen[features_pen])
+    train_sizes_pen = [100, 500, 1000, 1500, 3000, 4000, 5000, 6000, 7000, 8793]
+
+    run_estimators(credit_card_file, df_credit, features_credit, 'def_pay', seed, train_sizes_credit)
+    run_estimators(pen_digits_file, df_pen, features_pen, 'class', seed, train_sizes_pen)
+
+
+def run_estimators(fileName, df, features, target, seed, train_sizes):
     models = [
-                ('Decision Tree', DecisionTreeClassifier(criterion='gini', max_depth=10, random_state=seed)),
-                ('Ada Boost', AdaBoostClassifier(base_estimator=DecisionTreeClassifier(criterion='gini',
-                                                                                       max_depth=10,
-                                                                                       random_state=seed),
-                                                 random_state=seed)),
-                ('KNN', KNeighborsClassifier()),
-                ('NN', MLPClassifier(hidden_layer_sizes=(50, 50, 50), max_iter=1000, random_state=seed)),
-                ('SVM Poly', SVC(kernel='poly')),
-                ('SVM Lin', SVC(kernel='linear'))
-              ]
-    logger.info("Calling Trainer")
+        ('Decision Tree', DecisionTreeClassifier(criterion='gini', max_depth=10, random_state=seed,
+                                                 splitter='random')),
+        ('Ada Boost', AdaBoostClassifier(base_estimator=DecisionTreeClassifier(criterion='gini',
+                                                                               max_depth=10,
+                                                                               random_state=seed,
+                                                                               splitter='random'),
+                                         random_state=seed)),
+        ('KNN', KNeighborsClassifier()),
+        ('NN', MLPClassifier(hidden_layer_sizes=(50, 50, 50), max_iter=1000, random_state=seed)),
+        ('SVM rbf', SVC(kernel='rbf')),
+        ('SVM sigmoid', SVC(kernel='sigmoid'))
+    ]
     # model = DecisionTreeClassifier(max_depth=10, random_state=14)
-
-    fig, axes = plt.subplots(3, 2, figsize=(10, 15))
-
+    # fig, axes = plt.subplots(3, 2, figsize=(10, 15))
     for name, model in models:
-        # learning_curves(name, model, df, features, 'def_pay', train_sizes, 5)
-        plot_learning_curve(model, name, df[features], df['def_pay'],
-                            cv=5, n_jobs=5)
-        timestr = time.strftime("%Y%m%d-%H%M%S")
-        plt.savefig('./learning_curves/' + name + '_' + str(timestr) + '.png')
-        plt.close()
+        # timestr = time.strftime("%Y%m%d-%H%M%S")
+        logger.info(f"Calling Trainer {name} {fileName}")
+        learning_curves(name + ' ' + fileName, model, df, features, target, train_sizes, 5)
+        # plot_learning_curve(model, name, df[features], df['def_pay'],
+        #                     cv=5, n_jobs=5)
+        # timestr = time.strftime("%Y%m%d-%H%M%S")
+        # plt.savefig('./learning_curves/' + name + '_' + str(timestr) + '.png')
+        # plt.close()
     pass
-
 
 
 # code copied from https://www.dataquest.io/blog/learning-curves-machine-learning/
@@ -107,9 +116,9 @@ def learning_curves(name, estimator, data, features, target, train_sizes, cv):
     plt.ylabel('MSE', fontsize=14)
     plt.xlabel('Training set size', fontsize=14)
     # title = 'Learning curves for a ' + str(estimator).split('(')[0] + ' model'
-    title = f"Learning curves for a {name} model"
+    title = f"Learning curves for a\n%s" % "\n".join(wrap(f"{name}", width=60))
     timestr = time.strftime("%Y%m%d-%H%M%S")
-    plt.title(title, fontsize=18, y=1.03)
+    plt.title(title, fontsize=14, y=1.03)
     plt.margins(0)
     plt.legend()
     # plt.show()
@@ -118,7 +127,7 @@ def learning_curves(name, estimator, data, features, target, train_sizes, cv):
 
 
 def plot_learning_curve(estimator, title, X, y, axes=None, ylim=None, cv=None,
-                        n_jobs=None, train_sizes=np.linspace(.1, 1.0, 5)):
+                        n_jobs=None, train_sizes_credit=np.linspace(.1, 1.0, 5)):
     """
     Generate 3 plots: the test and training learning curve, the training
     samples vs fit times curve, the fit times vs score curve.
@@ -166,7 +175,7 @@ def plot_learning_curve(estimator, title, X, y, axes=None, ylim=None, cv=None,
         ``-1`` means using all processors. See :term:`Glossary <n_jobs>`
         for more details.
 
-    train_sizes : array-like, shape (n_ticks,), dtype float or int
+    train_sizes_credit : array-like, shape (n_ticks,), dtype float or int
         Relative or absolute numbers of training examples that will be used to
         generate the learning curve. If the dtype is float, it is regarded as a
         fraction of the maximum size of the training set (that is determined
@@ -177,13 +186,13 @@ def plot_learning_curve(estimator, title, X, y, axes=None, ylim=None, cv=None,
         (default: np.linspace(0.1, 1.0, 5))
     """
     if axes is None:
-        _, axes = plt.subplots(1, 3, figsize=(20, 5))
+        _, axes = plt.subplots(1, 1, figsize=(20, 5))
 
-    axes[0].set_title(title)
+    axes.set_title(title)
     if ylim is not None:
-        axes[0].set_ylim(*ylim)
-    axes[0].set_xlabel("Training examples")
-    axes[0].set_ylabel("Score")
+        axes.set_ylim(*ylim)
+    axes.set_xlabel("Training examples")
+    axes.set_ylabel("Score")
 
     train_sizes, train_scores, test_scores, fit_times, _ = \
         learning_curve(estimator, X, y, cv=cv, n_jobs=n_jobs,
@@ -197,36 +206,36 @@ def plot_learning_curve(estimator, title, X, y, axes=None, ylim=None, cv=None,
     fit_times_std = np.std(fit_times, axis=1)
 
     # Plot learning curve
-    axes[0].grid()
-    axes[0].fill_between(train_sizes, train_scores_mean - train_scores_std,
+    axes.grid()
+    axes.fill_between(train_sizes, train_scores_mean - train_scores_std,
                          train_scores_mean + train_scores_std, alpha=0.1,
                          color="r")
-    axes[0].fill_between(train_sizes, test_scores_mean - test_scores_std,
+    axes.fill_between(train_sizes, test_scores_mean - test_scores_std,
                          test_scores_mean + test_scores_std, alpha=0.1,
                          color="g")
-    axes[0].plot(train_sizes, train_scores_mean, 'o-', color="r",
+    axes.plot(train_sizes, train_scores_mean, 'o-', color="r",
                  label="Training score")
-    axes[0].plot(train_sizes, test_scores_mean, 'o-', color="g",
+    axes.plot(train_sizes, test_scores_mean, 'o-', color="g",
                  label="Cross-validation score")
-    axes[0].legend(loc="best")
+    axes.legend(loc="best")
 
-    # Plot n_samples vs fit_times
-    axes[1].grid()
-    axes[1].plot(train_sizes, fit_times_mean, 'o-')
-    axes[1].fill_between(train_sizes, fit_times_mean - fit_times_std,
-                         fit_times_mean + fit_times_std, alpha=0.1)
-    axes[1].set_xlabel("Training examples")
-    axes[1].set_ylabel("fit_times")
-    axes[1].set_title("Scalability of the model")
-
-    # Plot fit_time vs score
-    axes[2].grid()
-    axes[2].plot(fit_times_mean, test_scores_mean, 'o-')
-    axes[2].fill_between(fit_times_mean, test_scores_mean - test_scores_std,
-                         test_scores_mean + test_scores_std, alpha=0.1)
-    axes[2].set_xlabel("fit_times")
-    axes[2].set_ylabel("Score")
-    axes[2].set_title("Performance of the model")
+    # # Plot n_samples vs fit_times
+    # axes[1].grid()
+    # axes[1].plot(train_sizes, fit_times_mean, 'o-')
+    # axes[1].fill_between(train_sizes, fit_times_mean - fit_times_std,
+    #                      fit_times_mean + fit_times_std, alpha=0.1)
+    # axes[1].set_xlabel("Training examples")
+    # axes[1].set_ylabel("fit_times")
+    # axes[1].set_title("Scalability of the model")
+    #
+    # # Plot fit_time vs score
+    # axes[2].grid()
+    # axes[2].plot(fit_times_mean, test_scores_mean, 'o-')
+    # axes[2].fill_between(fit_times_mean, test_scores_mean - test_scores_std,
+    #                      test_scores_mean + test_scores_std, alpha=0.1)
+    # axes[2].set_xlabel("fit_times")
+    # axes[2].set_ylabel("Score")
+    # axes[2].set_title("Performance of the model")
 
     return plt
 
