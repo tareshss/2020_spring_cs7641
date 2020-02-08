@@ -20,6 +20,7 @@ import time
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import RandomizedSearchCV
 from collections import OrderedDict
+from textwrap import wrap
 
 logger: logging.getLogger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -120,8 +121,8 @@ def main():
     x_train_pen, x_test_pen, y_train_pen, y_test_pen = train_test_split(
         df_pen[features_pen], df_pen['class'], test_size=0.2, random_state=seed)
 
-    run_grid_search(x_train_pen, y_train_pen, seed)
-    run_grid_search(x_train_credit, y_train_credit, seed)
+    run_grid_search(pen_digits_file, x_train_pen, y_train_pen, seed)
+    run_grid_search(credit_card_file, x_train_credit, y_train_credit, seed)
 
     # best_tree = grid.best_estimator_
     # logger.info(best_tree)
@@ -129,21 +130,34 @@ def main():
     # y_true_pen, y_pred_test = y_test_pen, grid.predict(x_test_pen)
     # report(grid.cv_results_)
     # logger.info(classification_report(y_true_pen, y_pred_test))
-def run_grid_search(x_train_pen, y_train_pen, seed):
+def run_grid_search(filename, x_train_pen, y_train_pen, seed):
 
     models = [
-        # (DecisionTreeClassifier(),
-        #        'Decision Tree',
-        #        OrderedDict([('min_samples_leaf', np.arange(1, 10)), ('max_depth', np.arange(1, 21, 2))])),
+        (DecisionTreeClassifier(),
+               'Decision Tree',
+               OrderedDict([('min_samples_leaf', np.arange(1, 10)), ('max_depth', np.arange(1, 21, 2))]))
         #        (AdaBoostClassifier(base_estimator=DecisionTreeClassifier(), random_state=seed),
         #         #        'Ada Boost',
         #         #        OrderedDict([('n_estimators', np.arange(10, 100, 10)),
-        #         #                     ('base_estimator__splitter', ["best", "random"])]))
+        #         #                     ('base_estimator__splitter', ["best", "random"])])),
+        # (KNeighborsClassifier(), 'KNN',  OrderedDict([('n_neighbors', np.arange(1, 10)),
+        # ('weights', ["uniform","distance"])])),
+        #          (MLPClassifier(max_iter=1000), 'NN',
+        #           OrderedDict([('hidden_layer_sizes', [(50, 50, 50), (50, 100, 50), (100,)]),
+        #                        ('activation', ['tanh', 'relu'])])),
+        # (SVC(kernel='rbf'),
+        #  'SVM rbf',
+        #  OrderedDict([('C', [0.1, 1, 10, 100, 1000]),
+        #               ('gamma', [1, 0.1, 0.01, 0.001, 0.0001])])),
+        # (SVC(kernel='sigmoid'),
+        #  'SVM sigmoid',
+        #  OrderedDict([('C', [0.1, 1, 10, 100, 1000]),
+        #               ('gamma', [1, 0.1, 0.01, 0.001, 0.0001])]))
               ]
 
     for model, name, ordered_dict in models:
         # timestr = time.strftime("%Y%m%d-%H%M`1`S")
-        logger.info(f"Calling GridSearch On {name}")
+        logger.info(f"Calling GridSearch On {name} {filename}")
         items = list(ordered_dict.items())
         param_1_name = items[0][0]
         param_1 = items[0][1]
@@ -156,10 +170,10 @@ def run_grid_search(x_train_pen, y_train_pen, seed):
                                   n_iter=len(param_1) * len(param_2), cv=5, random_state=seed, n_jobs=-1,
                                   scoring='neg_mean_squared_error')
         grid.fit(x_train_pen, y_train_pen)
-        plot_grid(grid, param_1_name, param_2_name)
+        plot_grid(name + ' ' + filename, grid, param_1_name, param_2_name)
 
 
-def plot_grid(grid, param1, param2):
+def plot_grid(name, grid, param1, param2):
     score = pd.DataFrame(grid.cv_results_)
     df_score = score[[f'param_' + param1, f'param_' + param2, 'mean_test_score']].copy()
     df_score['mean_test_score'] *= -1
@@ -167,13 +181,14 @@ def plot_grid(grid, param1, param2):
         .reset_index()
     df_score = df_score.melt(f'param_' + param1, var_name=param2, value_name='mean_test_score')
     g = sns.catplot(x=f"param_" + param1, y="mean_test_score", hue=param2, data=df_score)
-    leg = g._legend
-    leg.set_bbox_to_anchor([1, 1])  # coordinates of lower left of bounding box
-    leg._loc = 2  # if required you can set the loc
-    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-    plt.show()
-
-
+    # leg = g._legend
+    # leg.set_bbox_to_anchor([1, 1])  # coordinates of lower left of bounding box
+    # leg._loc = 2  # if required you can set the loc
+    # plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    title = f"RandomizedSearchCV for a %s" % "\n".join(wrap(f"{name}", width=150))
+    g.fig.suptitle(title)
+    timestr = time.strftime("%Y%m%d-%H%M%S")
+    plt.savefig('./grid_search/' + name + '_' + str(timestr) + '.png')
 
 if __name__ == "__main__":
     main()
