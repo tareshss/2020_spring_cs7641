@@ -1,3 +1,4 @@
+import itertools
 import sys
 from sklearn.ensemble import AdaBoostClassifier
 from pathlib import Path
@@ -22,6 +23,7 @@ from sklearn.model_selection import RandomizedSearchCV
 from collections import OrderedDict
 from textwrap import wrap
 
+
 logger: logging.getLogger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -41,16 +43,16 @@ pen_digits_file = 'pendigits_csv.csv'
 
 # copied from https://scikit-learn.org/stable/auto_examples/model_selection/plot_randomized_search.html#sphx-glr-auto-examples-model-selection-plot-randomized-search-py
 # Utility function to report best scores
-def report(results, n_top=3):
+def report(results, n_top=1):
     for i in range(1, n_top + 1):
         candidates = np.flatnonzero(results['rank_test_score'] == i)
         for candidate in candidates:
-            print("Model with rank: {0}".format(i))
-            print("Mean validation score: {0:.3f} (std: {1:.3f})"
+            logger.info("Model with rank: {0}".format(i))
+            logger.info("Mean validation score: {0:.3f} (std: {1:.3f})"
                   .format(results['mean_test_score'][candidate],
                           results['std_test_score'][candidate]))
-            print("Parameters: {0}".format(results['params'][candidate]))
-            print("")
+            logger.info("Parameters: {0}".format(results['params'][candidate]))
+            logger.info("")
 
 
 def plot_grid_search(cv_results, grid_param_1, grid_param_2, name_param_1, name_param_2):
@@ -121,38 +123,33 @@ def main():
     x_train_pen, x_test_pen, y_train_pen, y_test_pen = train_test_split(
         df_pen[features_pen], df_pen['class'], test_size=0.2, random_state=seed)
 
-    run_grid_search(pen_digits_file, x_train_pen, y_train_pen, seed)
-    run_grid_search(credit_card_file, x_train_credit, y_train_credit, seed)
+    run_grid_search(pen_digits_file, x_train_pen, y_train_pen, x_test_pen, y_test_pen, seed)
+    run_grid_search(credit_card_file, x_train_credit, y_train_credit, x_test_credit, y_test_credit, seed)
 
-    # best_tree = grid.best_estimator_
-    # logger.info(best_tree)
-    #
-    # y_true_pen, y_pred_test = y_test_pen, grid.predict(x_test_pen)
-    # report(grid.cv_results_)
-    # logger.info(classification_report(y_true_pen, y_pred_test))
-def run_grid_search(filename, x_train_pen, y_train_pen, seed):
+
+def run_grid_search(filename, x_train, y_train, x_test, y_test, seed):
 
     models = [
         (DecisionTreeClassifier(),
-               'Decision Tree',
-               OrderedDict([('min_samples_leaf', np.arange(1, 10)), ('max_depth', np.arange(1, 21, 2))]))
-        #        (AdaBoostClassifier(base_estimator=DecisionTreeClassifier(), random_state=seed),
-        #         #        'Ada Boost',
-        #         #        OrderedDict([('n_estimators', np.arange(10, 100, 10)),
-        #         #                     ('base_estimator__splitter', ["best", "random"])])),
-        # (KNeighborsClassifier(), 'KNN',  OrderedDict([('n_neighbors', np.arange(1, 10)),
-        # ('weights', ["uniform","distance"])])),
-        #          (MLPClassifier(max_iter=1000), 'NN',
-        #           OrderedDict([('hidden_layer_sizes', [(50, 50, 50), (50, 100, 50), (100,)]),
-        #                        ('activation', ['tanh', 'relu'])])),
-        # (SVC(kernel='rbf'),
-        #  'SVM rbf',
-        #  OrderedDict([('C', [0.1, 1, 10, 100, 1000]),
-        #               ('gamma', [1, 0.1, 0.01, 0.001, 0.0001])])),
-        # (SVC(kernel='sigmoid'),
-        #  'SVM sigmoid',
-        #  OrderedDict([('C', [0.1, 1, 10, 100, 1000]),
-        #               ('gamma', [1, 0.1, 0.01, 0.001, 0.0001])]))
+         'Decision Tree',
+         OrderedDict([('min_samples_leaf', np.arange(1, 10)), ('max_depth', np.arange(1, 21, 2))])),
+        (AdaBoostClassifier(base_estimator=DecisionTreeClassifier(), random_state=seed),
+         'Ada Boost',
+         OrderedDict([('n_estimators', np.arange(10, 100, 10)), ('base_estimator__splitter', ["best", "random"])])),
+        (KNeighborsClassifier(),
+         'KNN',
+         OrderedDict([('n_neighbors', np.arange(1, 10)), ('weights', ["uniform","distance"])])),
+        (MLPClassifier(max_iter=1000),
+         'NN', OrderedDict([('hidden_layer_sizes', [x for x in itertools.product((10, 20, 30, 40, 50, 100), repeat=3)]),
+                            ('activation', ['tanh', 'relu'])])),
+        (SVC(kernel='rbf'),
+         'SVM rbf',
+         OrderedDict([('C', [0.1, 1, 10, 100, 1000]),
+                      ('gamma', [1, 0.1, 0.01, 0.001, 0.0001])])),
+        (SVC(kernel='sigmoid'),
+         'SVM sigmoid',
+         OrderedDict([('C', [0.1, 1, 10, 100, 1000]),
+                      ('gamma', [1, 0.1, 0.01, 0.001, 0.0001])]))
               ]
 
     for model, name, ordered_dict in models:
@@ -169,8 +166,13 @@ def run_grid_search(filename, x_train_pen, y_train_pen, seed):
         grid = RandomizedSearchCV(estimator=model, param_distributions=param_grid,
                                   n_iter=len(param_1) * len(param_2), cv=5, random_state=seed, n_jobs=-1,
                                   scoring='neg_mean_squared_error')
-        grid.fit(x_train_pen, y_train_pen)
+        grid.fit(x_train, y_train)
         plot_grid(name + ' ' + filename, grid, param_1_name, param_2_name)
+        best = grid.best_estimator_
+        logger.info(best)
+        y_true, y_pred_test = y_test, grid.predict(x_test)
+        report(grid.cv_results_)
+        logger.info(classification_report(y_true, y_pred_test))
 
 
 def plot_grid(name, grid, param1, param2):
@@ -189,6 +191,7 @@ def plot_grid(name, grid, param1, param2):
     g.fig.suptitle(title)
     timestr = time.strftime("%Y%m%d-%H%M%S")
     plt.savefig('./grid_search/' + name + '_' + str(timestr) + '.png')
+
 
 if __name__ == "__main__":
     main()
