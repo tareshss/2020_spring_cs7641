@@ -2,7 +2,7 @@
 
 2. Install Anaconda
 
-3. conda create -n cs7641 --file req.txt
+3. conda env create -f environment.yml
 
 4. Activate conda env
 
