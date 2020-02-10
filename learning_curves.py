@@ -16,16 +16,19 @@ plt.switch_backend('agg')
 import time
 from sklearn.preprocessing import StandardScaler
 from textwrap import wrap
+import datetime
 
+LOG_FILENAME = datetime.datetime.now().strftime('logfile_%H_%M_%d_%m_%Y.log')
 
 logger: logging.getLogger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 if not logger.hasHandlers():
-    sh = logging.StreamHandler()
+    fh = logging.FileHandler(LOG_FILENAME)
+    # sh = logging.StreamHandler()
     fmt = logging.Formatter(fmt="[%(asctime)s] [%(process)d] %(name)-12s %(levelname)-8s %(message)s")
-    sh.setFormatter(fmt)
-    logger.addHandler(sh)
+    fh.setFormatter(fmt)
+    logger.addHandler(fh)
     logger.propagate = False
 
 verbose = False
@@ -95,11 +98,6 @@ def run_estimators(fileName, df, features, target, seed, train_sizes):
         # timestr = time.strftime("%Y%m%d-%H%M%S")
         logger.info(f"Calling Trainer {name} {fileName}")
         learning_curves(name + ' ' + fileName, model, df, features, target, train_sizes, 5)
-        # plot_learning_curve(model, name, df[features], df['def_pay'],
-        #                     cv=5, n_jobs=5)
-        # timestr = time.strftime("%Y%m%d-%H%M%S")
-        # plt.savefig('./learning_curves/' + name + '_' + str(timestr) + '.png')
-        # plt.close()
     pass
 
 
@@ -127,7 +125,7 @@ def learning_curves(name, estimator, data, features, target, train_sizes, cv):
 
 
 def plot_learning_curve(estimator, title, X, y, axes=None, ylim=None, cv=None,
-                        n_jobs=None, train_sizes_credit=np.linspace(.1, 1.0, 5)):
+                        n_jobs=None, train_sizes=np.linspace(.1, 1.0, 5)):
     """
     Generate 3 plots: the test and training learning curve, the training
     samples vs fit times curve, the fit times vs score curve.
