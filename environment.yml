@@ -9,7 +9,6 @@ dependencies:
   - certifi=2019.11.28
   - cycler=0.10.0
   - freetype=2.10.0
-  - icc_rt=2019.0.0
   - icu=64.2
   - intel-openmp=2019.5
   - joblib=0.14.1
@@ -41,10 +40,7 @@ dependencies:
   - six=1.13.0
   - sqlite=3.30.1
   - tornado=6.0.3
-  - vc=14.1
-  - vs2015_runtime=14.16.27012
   - wheel=0.33.6
-  - wincertstore=0.2
   - zlib=1.2.11
   - pip:
     - pyqt5-sip==4.19.18
