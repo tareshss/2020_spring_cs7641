@@ -138,7 +138,7 @@ def run_grid_search(filename, df, features, pred, train_sizes):
 
         param_grid = dict(ordered_dict)
         grid = RandomizedSearchCV(estimator=model, param_distributions=param_grid,
-                                  n_iter=len(param_1) * len(param_2), cv=5, random_state=seed, n_jobs=-1,
+                                  n_iter=len(param_1) * len(param_2), cv=5, random_state=seed, n_jobs=1,
                                   scoring='neg_mean_squared_error')
         grid.fit(x_train, y_train)
         plt.clf()
