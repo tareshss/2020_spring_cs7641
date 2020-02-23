@@ -25,8 +25,7 @@ def main():
     X = 10
     Y = 10
     possible_coordinates = [(x, y) for x in range(X) for y in range(1, Y + 1)]
-    for(i in range(10,50,10)):
-        coords_list = random.sample(possible_coordinates, 50)
+    coords_list = random.sample(possible_coordinates, 50)
     # coords_list = [(1, 1), (4, 2), (5, 2), (6, 4), (4, 4), (3, 6), (1, 5), (2, 3)]
     # Define optimization problem object
     maximize = True
@@ -55,11 +54,12 @@ def main():
     plot_fitness('MIMIC for TSP', ga_tuning, 'population', 'keep_pct', 'fitness')
 
     # Solve using genetic algorithm
-    _, best_fitness, ga_curves = mlrose_hiive.genetic_alg(problem_no_fit, mutation_prob=0.2, max_attempts=100,
+    _, best_fitness, ga_curves = mlrose_hiive.genetic_alg(problem_no_fit, mutation_prob=0.01, max_attempts=100,
+                                                          pop_size=250,
                                                           max_iters=20000,
                                                     random_state=seed, curve=True)
     # Solve using MIMIC
-    _, best_fitness, mimic_curves = mlrose_hiive.mimic(problem_no_fit, pop_size=200, keep_pct=0.2, max_attempts=100,
+    _, best_fitness, mimic_curves = mlrose_hiive.mimic(problem_no_fit, pop_size=250, keep_pct=0.01, max_attempts=100,
                                                  max_iters=20000, curve=True, random_state=seed, fast_mimic=False)
 
     _, best_fitness, sa_curves = mlrose_hiive.simulated_annealing(problem_no_fit, max_attempts=100, max_iters=20000,
