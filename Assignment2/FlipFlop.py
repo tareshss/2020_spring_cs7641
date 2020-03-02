@@ -12,7 +12,7 @@ random.seed(seed)
 def main():
     experiment_name_ga = 'FlipFlop_GA'
     OUTPUT_DIRECTORY = './output'
-    problem = FlipFlopGenerator.generate(seed=seed)
+    problem = FlipFlopGenerator.generate(size=100, seed=seed)
     ga = GARunner(problem=problem,
                   experiment_name=experiment_name_ga,
                   output_directory=OUTPUT_DIRECTORY,
@@ -22,16 +22,6 @@ def main():
                   population_sizes=[150, 200, 250, 300],
                   mutation_rates=[0.01, 0.02, 0.03, 0.1, 0.2, 0.3, 0.4])
     ga.run()
-    experiment_name_mimic = 'FlipFlop_MIMIC'
-    mmc = MIMICRunner(problem=problem,
-                      experiment_name=experiment_name_mimic,
-                      output_directory=OUTPUT_DIRECTORY,
-                      seed=seed,
-                      iteration_list=2 ** np.arange(12),
-                      max_attempts=200,
-                      population_sizes=[150, 200, 250, 300],
-                      keep_percent_list=[0.01, 0.02, 0.03, 0.1, 0.2, 0.3, 0.4])
-    mmc.run()
     experiment_name_rhc = 'FlipFlop_RHC'
     rhc = RHCRunner(problem=problem,
                     experiment_name=experiment_name_rhc,
@@ -51,6 +41,17 @@ def main():
                   temperature_list=[1, 10, 50, 100, 250, 500, 1000, 2500, 5000, 10000])
 
     sa.run()
+    experiment_name_mimic = 'FlipFlop_MIMIC'
+    mmc = MIMICRunner(problem=problem,
+                      experiment_name=experiment_name_mimic,
+                      output_directory=OUTPUT_DIRECTORY,
+                      seed=seed,
+                      iteration_list=2 ** np.arange(12),
+                      max_attempts=200,
+                      population_sizes=[150, 200, 250, 300],
+                      keep_percent_list=[0.01, 0.02, 0.03, 0.1, 0.2, 0.3, 0.4])
+    mmc.run()
+
 
 if __name__ == "__main__":
     main()

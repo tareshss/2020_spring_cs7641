@@ -6,11 +6,12 @@ import numpy as np
 
 
 def main():
-    # graph_GA()
-    # graph_MIMIC()
-    # graph_SA()
+    graph_GA()
+    graph_MIMIC()
+    graph_SA()
     graph_RHC()
-    # graph_timings()
+    graph_timings()
+
 
 def graph_GA():
     df = pd.read_csv("./output/TSP_Maximize_GA/ga__TSP_Maximize_GA__run_stats_df.csv")
@@ -70,9 +71,8 @@ def graph_GA():
     ax = df_merged.plot(x='Iteration')
     NUM_COLORS = 20
     cm = plt.get_cmap('gist_rainbow')
-    ax.set_prop_cycle(color=[cm(1. * i / NUM_COLORS) for i in range(NUM_COLORS)])
-    for i in range(NUM_COLORS):
-        ax.plot(np.arange(10) * (i + 1))
+    for i, line in enumerate(ax.lines):
+        line.set_color(cm(1. * i / NUM_COLORS))
     plt.ylim(9200, 9400)
     plt.xlim(250, 2000)
     chartBox = ax.get_position()
@@ -158,7 +158,7 @@ def graph_MIMIC():
     title = f"TSP for MIMIC"
     plt.title(title, fontsize=14, y=1.03)
     timestr = time.strftime("%Y%m%d-%H%M%S")
-    plt.savefig('./graphs/' + 'MIMIC_GA' + '_' + str(timestr) + '.png')
+    plt.savefig('./graphs/' + 'TSP_MIMIC' + '_' + str(timestr) + '.png')
     plt.close()
 
 
@@ -222,13 +222,13 @@ def graph_SA():
 
 def graph_RHC():
     df = pd.read_csv("./output/TSP_Maximize_RHC/RHC__TSP_Maximize_RHC__run_stats_df.csv")
-    df_temp_25 = df.loc[(df['Restarts'] == 25)].copy()
+    df_temp_25 = df.loc[(df['Restarts'] == 25) & (df['current_restart'] == 25)].copy()
     df_temp_25 = df_temp_25[['Iteration', 'Fitness']]
     df_temp_25.rename(columns={'Fitness': 'Restarts 25'}, inplace=True)
-    df_temp_75 = df.loc[(df['Restarts'] == 75)].copy()
+    df_temp_75 = df.loc[(df['Restarts'] == 75) & (df['current_restart'] == 74)].copy()
     df_temp_75 = df_temp_75[['Iteration', 'Fitness']]
-    df_temp_75.rename(columns={'Fitness': 'Restarts 75'}, inplace=True)
-    df_temp_100 = df.loc[(df['Restarts'] == 100)].copy()
+    df_temp_75.rename(columns={'Fitness': 'Restarts 74'}, inplace=True)
+    df_temp_100 = df.loc[(df['Restarts'] == 100) & (df['current_restart'] == 100)].copy()
     df_temp_100 = df_temp_100[['Iteration', 'Fitness']]
     df_temp_100.rename(columns={'Fitness': 'Restarts 100'}, inplace=True)
 
@@ -237,7 +237,7 @@ def graph_RHC():
                                                     how='outer'), data_frames)
     ax = df_merged.plot(x='Iteration')
 
-    NUM_COLORS = 20
+    NUM_COLORS = 3
     cm = plt.get_cmap('gist_rainbow')
     ax.set_prop_cycle(color=[cm(1. * i / NUM_COLORS) for i in range(NUM_COLORS)])
     for i in range(NUM_COLORS):
@@ -298,7 +298,7 @@ def graph_timings():
     ax.set_xlabel("Iteration")
     ax.set_ylabel("Timings")
     timestr = time.strftime("%Y%m%d-%H%M%S")
-    title = f"GA Timings for All 4 Algorithms"
+    title = f"Timings for All 4 Algorithms For 50 Cities"
     plt.title(title, fontsize=14, y=1.03)
     plt.savefig('./graphs/' + 'TSP_Timings' + '_' + str(timestr) + '.png')
     plt.close()

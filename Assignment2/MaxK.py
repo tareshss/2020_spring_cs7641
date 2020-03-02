@@ -12,7 +12,7 @@ random.seed(seed)
 def main():
     experiment_name_ga = 'Max_K_GA'
     OUTPUT_DIRECTORY = './output'
-    problem = MaxKColorGenerator.generate(seed=seed, max_colors=4)
+    problem = MaxKColorGenerator.generate(seed=seed, number_of_nodes=40, max_connections_per_node=4)
     ga = GARunner(problem=problem,
                   experiment_name=experiment_name_ga,
                   output_directory=OUTPUT_DIRECTORY,
@@ -20,7 +20,7 @@ def main():
                   iteration_list=2 ** np.arange(12),
                   max_attempts=200,
                   population_sizes=[150, 200, 250, 300],
-                  mutation_rates=[0.01, 0.02, 0.03, 0.1, 0.2, 0.3, 0.4])
+                  mutation_rates=[0.03, 0.1, 0.2, 0.3, 0.4])
     ga.run()
     experiment_name_mimic = 'Max_K_MIMIC'
     mmc = MIMICRunner(problem=problem,
@@ -30,7 +30,7 @@ def main():
                       iteration_list=2 ** np.arange(12),
                       max_attempts=200,
                       population_sizes=[150, 200, 250, 300],
-                      keep_percent_list=[0.01, 0.02, 0.03, 0.1, 0.2, 0.3, 0.4])
+                      keep_percent_list=[0.03, 0.1, 0.2, 0.3, 0.4])
     mmc.run()
     experiment_name_rhc = 'Max_K_RHC'
     rhc = RHCRunner(problem=problem,

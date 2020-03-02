@@ -21,7 +21,8 @@ import mlrose_hiive
 
 import seaborn as sns
 from mlrose_hiive.runners import SKMLPRunner
-from mlrose_hiive.algorithms import ArithDecay
+from mlrose_hiive.neural import NeuralNetwork
+from mlrose_hiive.algorithms.decay import GeomDecay
 
 
 LOG_FILENAME = datetime.datetime.now().strftime('logfile_%H_%M_%d_%m_%Y.log')
@@ -83,109 +84,85 @@ def main():
         'activation': ['tanh']
     })
 
-    runner = SKMLPRunner(x_train, y_train_hot, x_test, y_test_hot, 'NN', seed,
-                         iteration_list=[1, 10, 50, 100, 250, 500, 1000, 2500, 5000, 10000],
-                         grid_search_parameters=grid_search_parameters, output_directory='./output')
-    results = runner.run()
-    # (self, x_train, y_train, x_test, y_test, experiment_name, seed, iteration_list,
-    #  grid_search_parameters, grid_search_scorer_method=skmt.balanced_accuracy_score,
-    #  early_stopping=True, max_attempts=500, n_jobs=1, cv=5,
-    #  generate_curves=True, output_directory=None, replay=False, ** kwargs):
-    # model = mlrose.NeuralNetwork(hidden_nodes=[10, 10, 10], activation='tanh',
+    # runner = SKMLPRunner(x_train, y_train_hot, x_test, y_test_hot, 'NN', seed,
+    #                      iteration_list=[1, 10, 50, 100, 250, 500, 1000, 2500, 5000, 10000],
+    #                      grid_search_parameters=grid_search_parameters, output_directory='./output')
+    # runner.run()
+    # # (self, x_train, y_train, x_test, y_test, experiment_name, seed, iteration_list,
+    # #  grid_search_parameters, grid_search_scorer_method=skmt.balanced_accuracy_score,
+    # #  early_stopping=True, max_attempts=500, n_jobs=1, cv=5,
+    # #  generate_curves=True, output_directory=None, replay=False, ** kwargs):
+    # model = NeuralNetwork(hidden_nodes=[10, 10, 10], activation='tanh',
     #                                    algorithm='random_hill_climb',
     #                                    max_iters=200, bias=True, is_classifier=True,
     #                                    learning_rate=0.001, early_stopping=False,
-    #                                    clip_max=5, max_attempts=100, random_state=seed)
-
+    #                                    clip_max=5, max_attempts=100, random_state=seed, curve=True)
+    #
     # model.fit(x_train, y_train_hot)
-    # # Predict labels for train set and assess accuracy
-    # y_train_pred = model.predict(x_train)
-    #
-    # y_train_accuracy = accuracy_score(y_train_hot, y_train_pred)
-    #
-    # logger.info(y_train_accuracy)
-    #
-    # # Predict labels for test set and assess accuracy
-    # y_test_pred = model.predict(x_test)
-    #
-    # y_test_accuracy = accuracy_score(y_test_hot, y_test_pred)
-    #
-    # logger.info(y_test_accuracy)
+    # Predict labels for train set and assess accuracy
+        # y_train_pred = model.predict(x_train)
+        #
+        # y_train_accuracy = accuracy_score(y_train_hot, y_train_pred)
+        #
+        # logger.info(y_train_accuracy)
+        #
+        # # Predict labels for test set and assess accuracy
+        # y_test_pred = model.predict(x_test)
+        #
+        # y_test_accuracy = accuracy_score(y_test_hot, y_test_pred)
+        #
+        # logger.info(y_test_accuracy)
 
+        # model.fitness_curve
 
-    ga_test_acc = []
-    ga_train_acc = []
-    ga_mse = []
-    ga_times = []
+    curves = []
 
-    sa_test_acc = []
-    sa_train_acc = []
-    sa_mse = []
-    sa_times = []
+    algorithms = [('random_hill_climb', 20000), ('simulated_annealing', 20000)
+                  , ('gradient_descent', 50), ('genetic_alg', 50)]
+    restarts = 0,
+    schedule = GeomDecay(init_temp=10),
+    pop_size = 200,
+    mutation_prob = 0.1,
+    max_attempts = 10,
+    for algo, iterations in algorithms:
+        model = NeuralNetwork(hidden_nodes=[10, 10, 10], activation='tanh',
+                              algorithm=algo, restarts=100,
+                              pop_size=250, mutation_prob=0.03,
+                              schedule=GeomDecay(init_temp=10),
+                              max_iters=iterations, bias=True, is_classifier=True,
+                              learning_rate=0.001, early_stopping=False,
+                              clip_max=5, max_attempts=100, random_state=seed,
+                              curve=True)
+        start_time = time.time()
+        model.fit(x_train, y_train_hot)
+        logger.info(f"fit time {algo} {iterations} {str(round(time.time() - start_time, 2))}")
+        start_time = time.time()
+        # Predict labels for train set and assess accuracy
+        y_train_pred = model.predict(x_train)
+        logger.info(f"Train predict time {algo} {iterations} {str(round(time.time() - start_time, 2))}")
+        y_train_accuracy = accuracy_score(y_train_hot, y_train_pred)
+        logger.info(f"Train Accuracy {algo} {iterations} {y_train_accuracy}")
+        # Predict labels for test set and assess accuracy
+        start_time = time.time()
+        y_test_pred = model.predict(x_test)
+        logger.info(f"Test predict time {algo} {iterations} {str(round(time.time() - start_time, 2))}")
+        y_test_accuracy = accuracy_score(y_test_hot, y_test_pred)
 
-    test_acc = []
-    sa_train_acc = []
-    sa_mse = []
-    sa_times = []
+        logger.info(f"Test Accuracy {algo} {iterations} {y_test_accuracy}")
+        curves.append(model.fitness_curve)
 
-    # # Solve using genetic algorithm
-    # algorithms = ['genetic_alg', 'simulated_annealing', 'random_hill_climb']
-    #
-    # for algo in algorithms:
-    #
-    #     model = mlrose.NeuralNetwork(hidden_nodes=[10, 10, 10], activation='tanh',
-    #                                  algorithm=algo,
-    #                                  max_iters=20000, bias=True, is_classifier=True,
-    #                                  learning_rate=0.001, early_stopping=False,
-    #                                  clip_max=5, max_attempts=100, random_state=seed)
-    #
-    #     model.fit(x_train, y_train_hot)
-    #     # Predict labels for train set and assess accuracy
-    #     y_train_pred = model.predict(x_train)
-    #     y_train_accuracy = accuracy_score(y_train_hot, y_train_pred)
-    #     ga_acc.append(y_train_accuracy)
-    #     logger.info(y_train_accuracy)
-    #     # Predict labels for test set and assess accuracy
-    #     y_test_pred = model.predict(x_test)
-    #
-    #     y_test_accuracy = accuracy_score(y_test_hot, y_test_pred)
-    #
-    #     logger.info(y_test_accuracy)
-    #
-    #     model_ga = mlrose.NeuralNetwork(hidden_nodes=[10, 10, 10], activation='tanh',
-    #                                    algorithm='genetic_alg',
-    #                                    max_iters=200, bias=True, is_classifier=True,
-    #                                    learning_rate=0.001, early_stopping=False,
-    #                                    clip_max=5, max_attempts=100, random_state=seed)
-    #
-    #
-    #     ga_acc.append(best_fitness)
-    #
-    #     _, best_fitness = mlrose.NeuralNetwork(hidden_nodes=[10, 10, 10], activation='tanh',
-    #                                    algorithm='simulated_annealing',
-    #                                    max_iters=200, bias=True, is_classifier=True,
-    #                                    learning_rate=0.001, early_stopping=False,
-    #                                    clip_max=5, max_attempts=100, random_state=seed)
-    #
-    #     sa_best.append(best_fitness)
-    #
-    #     _, best_fitness = _, best_fitness = mlrose.NeuralNetwork(hidden_nodes=[10, 10, 10], activation='tanh',
-    #                                    algorithm='random_hill_climb',
-    #                                    max_iters=200, bias=True, is_classifier=True,
-    #                                    learning_rate=0.001, early_stopping=False,
-    #                                    clip_max=5, max_attempts=100, random_state=seed)
-    #     rhc_best.append(best_fitness)
-    #     print(i)
-    #
-    # zippedlist = list(zip(ga_best, mimic_best, rhc_best))
-    # df_TSP = pd.DataFrame(zippedlist, columns=['ga', 'mimic','rhc'])
-    # df_TSP.index += 1
-    # ax = df_TSP.plot()
-    # ax.set_xlabel("Iteration")
-    # ax.set_ylabel("Best Fitness")
-    # timestr = time.strftime("%Y%m%d-%H%M%S")
-    # plt.savefig('./graphs/' + 'NN' + '_' + str(timestr) + '.png')
-
+    algo_list = [algorithm[0] for algorithm in algorithms]
+    df_curves = pd.DataFrame({algo_list[0]: pd.Series(curves[0]), algo_list[1]: pd.Series(curves[1]),
+                              algo_list[2]: pd.Series(curves[2]),
+                              algo_list[3]: pd.Series(curves[3])})
+    df_curves.fillna(method='ffill', inplace=True)
+    timestr = time.strftime("%Y%m%d-%H%M%S")
+    df_curves.to_csv(f'./output/df_curves_{timestr}.csv', index=False)
+    ax = df_curves.plot()
+    ax.set_xlabel("Iteration")
+    ax.set_ylabel("Best Fitness")
+    timestr = time.strftime("%Y%m%d-%H%M%S")
+    plt.savefig('./graphs/' + 'Credit_All_Algorithms' + '_' + str(timestr) + '.png')
 
 def plot_fitness(name, values, param1, param2, param3):
     df = pd.DataFrame(values, columns=[param1, param2, param3])
