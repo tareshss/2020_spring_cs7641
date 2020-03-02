@@ -1,14 +1,14 @@
-1. Git clone https://github.com/tareshss/2020_spring_cs7641.git
+1. git clone https://github.com/tareshss/2020_spring_cs7641.git
 
-2. Install Anaconda
+2. Navigate to Assignment2 Directory
 
-3. conda search -c bioconda -c conda-forge
+3. Install Anaconda
 
-4. conda env create -f environment.yml
+4. conda search -c bioconda -c conda-forge
 
-5. Activate conda env
+5. conda env create -f environment.yml
 
-6. Navigate to Assignment2 Directory
+6. Activate conda env
 
 7. pip install mlrose-hiive
 
