@@ -3,14 +3,14 @@ import time
 import matplotlib.pyplot as plt
 from functools import reduce
 import numpy as np
-
+plt.switch_backend('agg')
 
 def main():
-    # graph_GA()
-    # graph_MIMIC()
-    # graph_SA()
+    graph_GA()
+    graph_MIMIC()
+    graph_SA()
     graph_RHC()
-    # graph_timings()
+    graph_timings()
 
 
 def graph_GA():

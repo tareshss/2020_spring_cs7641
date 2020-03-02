@@ -1,0 +1,50 @@
+name: cs7641_2020_spring
+channels:
+  - anaconda
+  - defaults
+  - conda-forge
+dependencies:
+  - blas=1.0
+  - ca-certificates=2020.1.1
+  - certifi=2019.11.28
+  - cycler=0.10.0
+  - freetype=2.10.0
+  - icu=64.2
+  - intel-openmp=2019.5
+  - joblib=0.14.1
+  - jpeg=9c
+  - kiwisolver=1.1.0
+  - libclang=9.0.1
+  - libpng=1.6.37
+  - matplotlib=3.1.2
+  - matplotlib-base=3.1.2
+  - mkl=2019.5
+  - mkl-service=2.3.0
+  - mkl_fft=1.0.15
+  - mkl_random=1.1.0
+  - numpy=1.18.1
+  - numpy-base=1.18.1
+  - openssl=1.1.1
+  - pandas=0.25.3
+  - pip=19.3.1
+  - pyparsing=2.4.6
+  - pyqt=5.12.3
+  - python=3.6.10
+  - python-dateutil=2.8.1
+  - pytz=2019.3
+  - qt=5.12.5
+  - scikit-learn=0.22.1
+  - scipy=1.3.2
+  - seaborn=0.10.0
+  - setuptools=44.0.0
+  - six=1.13.0
+  - sqlite=3.30.1
+  - tornado=6.0.3
+  - wheel=0.33.6
+  - zlib=1.2.11
+  - pip:
+    - pyqt5-sip==4.19.18
+    - pyqtwebengine==5.12.1
+    -
+prefix: D:\Anaconda\envs\cs7641_2020_spring
+

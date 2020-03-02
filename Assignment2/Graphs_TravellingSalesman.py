@@ -3,7 +3,7 @@ import time
 import matplotlib.pyplot as plt
 from functools import reduce
 import numpy as np
-
+plt.switch_backend('agg')
 
 def main():
     graph_GA()

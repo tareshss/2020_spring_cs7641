@@ -2,15 +2,14 @@ import pandas as pd
 import time
 import matplotlib.pyplot as plt
 from functools import reduce
-import numpy as np
-from matplotlib.cm import get_cmap
+plt.switch_backend('agg')
 
 def main():
     graph_GA()
     graph_MIMIC()
     graph_SA()
     graph_RHC()
-    # graph_timings()
+    graph_timings()
 
 
 def graph_GA():
